@@ -11,16 +11,30 @@ const interviewRouter = require("./routes/interview.routes")
 
 const app = express()
 const publicDir = path.join(__dirname, "../public")
-const allowedOrigins = process.env.CLIENT_ORIGIN
-    ? process.env.CLIENT_ORIGIN.split(",").map(o => o.trim())
-    : ["http://localhost:5173", "http://localhost:3000"]
+const defaultOrigins = [
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "https://interview-master-ai.onrender.com"
+]
+
+const allowedOrigins = [
+    ...defaultOrigins,
+    ...(process.env.CLIENT_ORIGIN
+        ? process.env.CLIENT_ORIGIN.split(",").map(o => o.trim().replace(/\/$/, ""))
+        : [])
+]
 
 app.use(cors({
     origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin)) {
+        if (!origin) return callback(null, true)
+
+        const normalizedOrigin = origin.replace(/\/$/, "")
+        if (allowedOrigins.includes(normalizedOrigin)) {
             return callback(null, true)
         }
-        return callback(new Error("Not allowed by CORS"))
+
+        console.warn(`Blocked by CORS: ${origin}. Allowed origins:`, allowedOrigins)
+        return callback(new Error(`Not allowed by CORS: ${origin}`))
     },
     credentials: true
 }))
