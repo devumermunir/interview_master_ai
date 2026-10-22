@@ -24,20 +24,20 @@ const allowedOrigins = [
         : [])
 ]
 
-app.use(cors({
-    origin: (origin, callback) => {
-        if (!origin) return callback(null, true)
+const corsOptions = {
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
 
-        const normalizedOrigin = origin.replace(/\/$/, "")
-        if (allowedOrigins.includes(normalizedOrigin)) {
-            return callback(null, true)
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
         }
-
-        console.warn(`Blocked by CORS: ${origin}. Allowed origins:`, allowedOrigins)
-        return callback(new Error(`Not allowed by CORS: ${origin}`))
     },
     credentials: true
-}))
+};
+app.use(cors(corsOptions))
 app.use(express.static(publicDir))
 app.use(express.json())
 app.use(cookieParser())
