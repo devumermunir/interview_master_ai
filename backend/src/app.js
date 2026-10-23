@@ -29,10 +29,12 @@ const corsOptions = {
         // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
 
-        if (allowedOrigins.indexOf(origin) !== -1) {
+        const normalizedOrigin = origin.replace(/\/$/, "");
+        if (allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.indexOf(normalizedOrigin) !== -1) {
             callback(null, true);
         } else {
-            callback(new Error('Not allowed by CORS'));
+            console.warn(`Blocked by CORS: ${origin}. Allowed origins:`, allowedOrigins);
+            callback(new Error(`Not allowed by CORS: ${origin}`));
         }
     },
     credentials: true
