@@ -1,0 +1,49 @@
+name: Build and Update Frontend
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'frontend/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-commit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Frontend Dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Build Frontend
+        working-directory: ./frontend
+        env:
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL || '' }}
+        run: npm run build
+
+      - name: Commit and Push Updated Backend Public Assets
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add backend/public
+          if git diff --staged --quiet; then
+            echo "No changes detected in backend/public. Nothing to commit."
+          else
+            git commit -m "chore(build): update backend/public from frontend build [skip ci]"
+            git push
+          fi
